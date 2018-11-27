@@ -18,9 +18,25 @@ from django.urls import path
 from myapp import views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
+from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',views.home,name="home")
+
+    path('',views.map_data,name="map_data"),
+    path('track_data/',views.track_data,name="track_data"),
+
+    path('add_patient/', views.add_patient, name='add_patient'),
+    path('edit_patient/<int:pk>', views.edit_patient, name='edit_patient'),
+    path('delete_patient/<int:pk>', views.delete_patient, name='delete_patient'),
+    path('list_patient/', views.list_patient, name='list_patient'),
+
+    path('about_us/', views.about_us, name='about_us'),
+    path('search/', views.search, name='search'),
+    path('search_dieases/', views.search_dieases, name='search_dieases'),
+    path('search_date/', views.search_date, name='search_date'),
+    path('search_time/', views.search_time, name='search_time'),
+
 ]
 urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

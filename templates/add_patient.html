@@ -1,0 +1,17 @@
+{% extends 'base_template.html' %}
+
+{% block content %}
+
+   <h1> Fill Up Patient's Details</h1>
+<form method="POST">
+    {% csrf_token %}
+    <table>
+    {{ form.as_table}}
+    </table>
+
+
+         <input type="submit" value="Submit" />
+</form>
+{% endblock %}
+
+

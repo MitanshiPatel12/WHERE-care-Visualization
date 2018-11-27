@@ -1,0 +1,101 @@
+{% extends 'base_template.html' %}
+
+{% block content %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<link href="http://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="stylesheet">
+        <link href="/static/css/custom.css" rel="stylesheet">
+
+<script src="http://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
+
+<section class="resume-section p-3 p-lg-5 d-flex d-column" id="mapping">
+        <div class="">
+          <h1 class="mb-0">Patients' Data
+            <span class="text-primary">Analysis</span>
+          </h1>
+
+            <div class="row">
+                     <form method="GET" action="{% url 'search' %}">
+                          <div class="form-group">
+                              <label>Search Patient's By Name: </label>
+                              <input name="q" lass="form-control" value="{{ request.GET.q }}" placeholder="search...">
+                              <button class="btn btn-success" type="submit">Search</button>
+
+                          </div>
+                     </form>
+                    <form method="GET" action="{% url 'search_dieases' %}">
+
+                         <div class="form-group">
+                              <label>Search Patient's By His/Her Dieases: </label>
+                              <input name="qd" lass="form-control" value="{{ request.GET.qd }}" placeholder="search...">
+                             <button class="btn btn-success" type="submit">Search</button>
+
+                         </div>
+                    </form>
+
+                </div>
+                     <div id="mapid" style="height:80%;width: 100%;"></div>
+
+
+        </div>
+</section>
+</body>
+<script type="text/javascript">
+
+   function myMap () {
+     var patients =  JSON.parse('{{ patients }}')
+                var patients = patients;
+
+                var map = new google.maps.Map(document.getElementById('mapid'), {
+                    zoom: 12.5,
+                    center: new google.maps.LatLng(42.3149, -83.0364),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                });
+
+                var infowindow = new google.maps.InfoWindow();
+
+                var marker, i;
+
+                for (i = 0; i < patients.length; i++) {
+                    var str = patients[i].geolocation;
+                    var res = str.split(",");
+                     var image = '/media/icon.png';
+                     marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(parseFloat(res[0]), parseFloat(res[1])),
+                        map: map,
+                         icon: image
+                    });
+
+
+                    google.maps.event.addListener(marker, 'click', (function (marker, i) {
+                        var content = [
+                            ' <div class="row">',
+                            '<div class="col-md-5">',
+                            '<img src="/media/' + patients[i].photo + '" width="140" height="160"/>',
+                            '</div>',
+                            '<div class="col-md-7">',
+                            '<p><b>Patient Name: </b>' + patients[i].firstName + ' ' + patients[i].lastName + '</p>',
+                            '<p><b>Email: </b>' + patients[i].email + '</b></p>',
+                            '<p><b>Gender: </b>' + patients[i].gender + '</b></p>',
+                            '<p><b>Address: </b>' + patients[i].address_detail + '</p>',
+                            '<p><b>Contact Number: </b>' + patients[i].contact + '</p>',
+                            '<p><b>Docter Name: </b>' + patients[i].docor_name + '</p>',
+                            '<p><b>Disease Name: </b>' + patients[i].disease_name + '</p>',
+                            '<p><b>Medicine Details: </b>' + patients[i].medicine_detail + '</p>',
+                            '<p><b>Emergency Contact Name: </b>' + patients[i].emergancy_contact_name + '</p>',
+                            '<p><b>Emergency Contact Number </b>' + patients[i].emergancy_contact_no + '</p>',
+
+                            '</div>',
+                            '</div>'
+                        ].join(' ');
+                        return function () {
+                            infowindow.setContent(content);
+                            infowindow.open(map, marker);
+                        }
+                    })(marker, i));
+                }
+            }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDetC2FX1OYO-wbZv2MMg1nJjLK6slIGLs&callback=myMap"></script>
+    <script src="/static/js/timeslider.js"></script>
+
+{% endblock %}

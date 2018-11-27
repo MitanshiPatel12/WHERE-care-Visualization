@@ -1,0 +1,206 @@
+{% extends 'base_template.html' %}
+
+{% block content %}
+    <script src="http://maps.google.com/maps/api/js?key=AIzaSyDetC2FX1OYO-wbZv2MMg1nJjLK6slIGLs"
+          type="text/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<link href="http://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="stylesheet">
+        <link href="/static/css/custom.css" rel="stylesheet">
+
+<script src="http://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
+
+<section class="resume-section p-3 p-lg-5 d-flex d-column" id="mapping">
+        <div class="">
+          <h1 class="mb-0">Track Live
+            <span class="text-primary">Location</span>
+          </h1>
+
+            <div class="row">
+              <div class="form-group">
+                  <label>Track Patient's By Live Location: </label>
+                     <input style="width: 580px" type="range" step="86400000" max="1543536928000" min="1541031328000" value="1543172445000" id="rangeControlledByDate" />
+                  <input type="date" max="2018-12-31" min="2018-01-01" value="2018-11-25" id="dateControlledByRange" />
+              </div>
+
+
+                <div class="form-group">
+                   <div class="dropdown">
+                      <button onclick="myFunction()" class="dropbtn">Patient's Name</button>
+                      <div id="myDropdown" class="dropdown-content">
+                        <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
+                        {% for patient in patients %}
+                            <a href="#{{ patient.firstName }}">{{ patient.firstName }}</a>
+                          {% endfor %}
+                      </div>
+                    </div>
+                </div>
+
+            <div class="form-group" style="padding-left: 15px">
+                   <div id="time-range">
+                    <p>Time Range: <span class="slider-time">1:00</span> - <span class="slider-time2">2:00</span></p>
+                         <div class="sliders_step1">
+                        <div id="slider-range"></div>
+                        </div>
+                   </div>
+               </div>
+
+
+
+            </div>
+             <div id="mapid2" style="height:80%;width: 100%;"></div>
+        </div>
+</section>
+</body>
+<script type="text/javascript">
+     var locationTracks_map =  JSON.parse('{{ locationTracks_map }}')
+     my_mapping(locationTracks_map);
+
+     /* When the user clicks on the button,
+toggle between hiding and showing the dropdown content */
+     function myFunction() {
+  document.getElementById("myDropdown").classList.toggle("show");
+}
+
+     function filterFunction() {
+  var input, filter, ul, li, a, i;
+  input = document.getElementById("myInput");
+  filter = input.value.toUpperCase();
+  div = document.getElementById("myDropdown");
+  a = div.getElementsByTagName("a");
+  for (i = 0; i < a.length; i++) {
+    if (a[i].innerHTML.toUpperCase().indexOf(filter) > -1) {
+      a[i].style.display = "";
+    } else {
+      a[i].style.display = "none";
+    }
+  }
+}
+
+     $("#slider-range").slider({
+    range: true,
+    min: 0,
+    max: 1440,
+    step: 60,
+    values: [60, 120],
+    slide: function (e, ui) {
+        var hours1 = Math.floor(ui.values[0] / 60);
+        var minutes1 = ui.values[0] - (hours1 * 60);
+       //var second1 = ui.values[0] - (hours1  / 60);
+
+        if (hours1.length == 1) hours1 = '0' + hours1;
+        if (minutes1.length == 1) minutes1 = '0' + minutes1;
+        //if (second1.length == 1) second1 = '0' + second1;
+        if (minutes1 == 0) minutes1 = '00';
+        //if (second1 == 0) second1 = '00';
+
+
+
+        $('.slider-time').html(hours1 + ':' + minutes1);
+
+        var hours2 = Math.floor(ui.values[1] / 60);
+        var minutes2 = ui.values[1] - (hours2 * 60);
+
+        if (hours2.length == 1) hours2 = '0' + hours2;
+        if (minutes2.length == 1) minutes2 = '0' + minutes2;
+        if (minutes2 == 0) minutes2 = '00';
+
+        $('.slider-time2').html(hours2 + ':' + minutes2);
+         var date = $('#dateControlledByRange').val();
+         console.log(date);
+         $.ajax({
+        url: '{% url "search_time" %}',
+        data: {
+          'time_start': hours1,
+          'time_end': hours2,
+          'date': date,
+        },
+        dataType: 'json',
+        success: function (data) {
+          if (data) {
+             my_mapping(data);
+          }
+        }
+      });
+    }
+});
+
+     $('#dateControlledByRange').on('input', function() {
+            $('#rangeControlledByDate').prop('valueAsNumber', $.prop(this, 'valueAsNumber'));
+
+        });
+
+     $('#rangeControlledByDate').on('input', function() {
+    $('#dateControlledByRange').prop('valueAsNumber', $.prop(this, 'valueAsNumber'));
+        var date = $('#dateControlledByRange').val();
+         $.ajax({
+        url: '{% url "search_date" %}',
+        data: {
+          'date': date
+        },
+        dataType: 'json',
+        success: function (data) {
+          if (data) {
+             my_mapping(data);
+          }
+        }
+      });
+    });
+
+     function my_mapping(locationTracks_map) {
+
+                var locationTracks_map = locationTracks_map;
+
+                var map = new google.maps.Map(document.getElementById('mapid2'), {
+                    zoom: 12.5,
+                    center: new google.maps.LatLng(42.3149, -83.0364),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                });
+                 var flightPlanCoordinates = [];
+                for (i = 0; i < locationTracks_map.length; i++) {
+                    var str = locationTracks_map[i].geolocation;
+                    var res = str.split(",");
+                    flightPlanCoordinates.push({lat: parseFloat(res[0]), lng: parseFloat(res[1])})
+
+                }
+                var flightPath = new google.maps.Polyline({
+                  path: flightPlanCoordinates,
+                  geodesic: true,
+                  strokeColor: '#FF0000',
+                  strokeOpacity: 1.0,
+                  strokeWeight: 2
+                });
+
+                flightPath.setMap(map);
+
+                var infowindow = new google.maps.InfoWindow();
+
+                var marker, i;
+
+                for (i = 0; i < locationTracks_map.length; i++) {
+                    var str = locationTracks_map[i].geolocation;
+                    var res = str.split(",");
+                    var image = '/media/icon.png';
+                    marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(parseFloat(res[0]), parseFloat(res[1])),
+                        map: map,
+                        icon: image
+                    });
+
+
+                    google.maps.event.addListener(marker, 'click', (function (marker, i) {
+                        var content = [
+                            '<p><b>Address: </b>' + locationTracks_map[i].address_detail + '</p>',
+                            '<p><b>Time: </b>' + locationTracks_map[i].time + '</p>',
+                        ].join(' ');
+                        return function () {
+                            infowindow.setContent(content);
+                            infowindow.open(map, marker);
+                        }
+                    })(marker, i));
+                }
+            }
+
+</script>
+
+
+{% endblock %}
